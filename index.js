@@ -96,7 +96,7 @@ app.post('/api/test-sms', async (req, res) => {
 app.listen(PORT, async () => {
   console.log(`\n🖥️  Server Monitor Dashboard → http://localhost:${PORT}`);
   console.log(`📡  Monitoring: ${SERVER_IP}`);
-  console.log(`📱  SMS alerts → ${require('./lib/sms').TO_NUMBER}\n`);
+  console.log(`🔔  Notifications → ntfy.sh/${process.env.NTFY_TOPIC || 'server-monitor-jbains'}\n`);
 
   // Initial check on startup
   try {
