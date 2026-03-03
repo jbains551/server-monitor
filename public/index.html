@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server Monitor — 187.77.86.51</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="logo">⬡</div>
+      <div>
+        <h1>Server Monitor</h1>
+        <span class="server-ip">187.77.86.51</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="refresh-info">Auto-refresh: <span id="countdown">30</span>s</span>
+      <button id="btn-check" class="btn btn-primary" onclick="manualCheck()">Check Now</button>
+      <button id="btn-sms" class="btn btn-secondary" onclick="testSMS()">Test SMS</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Status Banner -->
+    <div id="status-banner" class="status-banner loading">
+      <div class="status-indicator">
+        <div class="pulse-ring"></div>
+        <div class="status-dot"></div>
+      </div>
+      <div class="status-text">
+        <div id="status-label" class="status-label">Checking...</div>
+        <div id="status-sub" class="status-sub">Loading server status</div>
+      </div>
+      <div class="status-meta">
+        <div class="meta-item">
+          <span class="meta-label">Last Checked</span>
+          <span id="last-checked" class="meta-value">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">HTTP Status</span>
+          <span id="http-code" class="meta-value">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📡</div>
+        <div class="card-body">
+          <div class="card-label">Ping Latency</div>
+          <div id="stat-ping" class="card-value">—</div>
+          <div id="stat-ping-sub" class="card-sub">Current</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-body">
+          <div class="card-label">HTTP Response</div>
+          <div id="stat-http" class="card-value">—</div>
+          <div id="stat-http-sub" class="card-sub">Current</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-body">
+          <div class="card-label">Uptime (24h)</div>
+          <div id="stat-uptime-24h" class="card-value">—</div>
+          <div id="stat-uptime-24h-sub" class="card-sub">Checks completed</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-body">
+          <div class="card-label">Avg Ping (24h)</div>
+          <div id="stat-avg-ping" class="card-value">—</div>
+          <div id="stat-avg-ping-sub" class="card-sub">Min / Max</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Response Time History</h2>
+        <div class="chart-controls">
+          <button class="chip active" data-hours="1" onclick="setChartRange(1, this)">1h</button>
+          <button class="chip" data-hours="6" onclick="setChartRange(6, this)">6h</button>
+          <button class="chip" data-hours="24" onclick="setChartRange(24, this)">24h</button>
+          <button class="chip" data-hours="168" onclick="setChartRange(168, this)">7d</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="responseChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Ports & Uptime Stats -->
+    <div class="two-col">
+      <!-- Port Status -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Port Status</h2>
+        </div>
+        <div class="port-grid">
+          <div class="port-item" id="port-22">
+            <div class="port-num">22</div>
+            <div class="port-name">SSH</div>
+            <div class="port-badge">—</div>
+          </div>
+          <div class="port-item" id="port-80">
+            <div class="port-num">80</div>
+            <div class="port-name">HTTP</div>
+            <div class="port-badge">—</div>
+          </div>
+          <div class="port-item" id="port-443">
+            <div class="port-num">443</div>
+            <div class="port-name">HTTPS</div>
+            <div class="port-badge">—</div>
+          </div>
+          <div class="port-item" id="port-3000">
+            <div class="port-num">3000</div>
+            <div class="port-name">Node</div>
+            <div class="port-badge">—</div>
+          </div>
+          <div class="port-item" id="port-8080">
+            <div class="port-num">8080</div>
+            <div class="port-name">Alt HTTP</div>
+            <div class="port-badge">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Uptime Stats -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Uptime Statistics</h2>
+        </div>
+        <div class="uptime-rows">
+          <div class="uptime-row">
+            <span class="uptime-period">Last 24 Hours</span>
+            <div class="uptime-bar-wrap">
+              <div id="bar-24h" class="uptime-bar" style="width:0%"></div>
+            </div>
+            <span id="pct-24h" class="uptime-pct">—</span>
+          </div>
+          <div class="uptime-row">
+            <span class="uptime-period">Last 7 Days</span>
+            <div class="uptime-bar-wrap">
+              <div id="bar-7d" class="uptime-bar" style="width:0%"></div>
+            </div>
+            <span id="pct-7d" class="uptime-pct">—</span>
+          </div>
+          <div class="uptime-row">
+            <span class="uptime-period">Last 30 Days</span>
+            <div class="uptime-bar-wrap">
+              <div id="bar-30d" class="uptime-bar" style="width:0%"></div>
+            </div>
+            <span id="pct-30d" class="uptime-pct">—</span>
+          </div>
+        </div>
+        <div class="uptime-detail-grid">
+          <div class="uptime-detail">
+            <span class="ud-label">Avg HTTP (24h)</span>
+            <span id="ud-avg-http" class="ud-value">—</span>
+          </div>
+          <div class="uptime-detail">
+            <span class="ud-label">Min Ping (24h)</span>
+            <span id="ud-min-ping" class="ud-value">—</span>
+          </div>
+          <div class="uptime-detail">
+            <span class="ud-label">Max Ping (24h)</span>
+            <span id="ud-max-ping" class="ud-value">—</span>
+          </div>
+          <div class="uptime-detail">
+            <span class="ud-label">Total Checks (24h)</span>
+            <span id="ud-checks" class="ud-value">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Recent Events</h2>
+        <span id="events-count" class="badge">0 records</span>
+      </div>
+      <div class="table-wrap">
+        <table id="events-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Ping</th>
+              <th>HTTP Response</th>
+              <th>HTTP Status</th>
+              <th>SSH</th>
+              <th>HTTP</th>
+              <th>HTTPS</th>
+            </tr>
+          </thead>
+          <tbody id="events-body">
+            <tr><td colspan="8" class="empty-row">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SMS Alerts Log -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>SMS Alert Log</h2>
+        <span class="badge" id="sms-badge">0 sent</span>
+      </div>
+      <div id="alerts-list" class="alerts-list">
+        <div class="empty-msg">No alerts sent yet.</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Server Monitor • 187.77.86.51</span>
+    <span>SMS → (205) 616-0901 • Hourly + Incident Alerts</span>
+  </footer>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
